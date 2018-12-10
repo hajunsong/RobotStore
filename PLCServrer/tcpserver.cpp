@@ -2,7 +2,7 @@
 
 TcpServer::TcpServer(QObject *parent) : QTcpServer(parent) {
 	timer = new QTimer();
-	timer->setInterval(1000);
+	timer->setInterval(3000);
 	connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
 }
 
@@ -65,7 +65,7 @@ void TcpServer::timeout() {
 
 	QByteArray txData;
 	txData.append(QByteArray::fromHex("0306"));
-	txData.append(QByteArray::fromHex("0020"));
+	txData.append(QByteArray::fromHex("0002"));
 	txData.append(QByteArray::fromHex("000000000000000000"));
 	txData.append(QByteArray::fromHex("0D05"));
 

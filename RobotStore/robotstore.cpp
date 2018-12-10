@@ -190,10 +190,11 @@ void RobotStore::readMessageFromPLC() {
 		qDebug() << QString(ch[j]).toUtf8();
 	}
 	if (ch[0] == 0x03 && ch[1] == 0x06) {
-		//if (ch[2] & 0x0010 == 0x0010) {
-		//	timer->start();
-		//	qDebug() << "Manipulator operation complete";
-		//}
+		if (ch[3] == 0x02) {
+			qDebug() << "Manipulator operation complete";
+			mainUI->slideInIdx(thankPage, mainUI->TOP2BOTTOM);
+			timer->start();
+		}
 	}
 	delete[] ch;
 }
