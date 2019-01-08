@@ -37,7 +37,14 @@ void TcpServer::incomingConnection(qintptr socketDescriptor) {
 
 	connect(socket, SIGNAL(readyRead()), this, SLOT(readyRead()), Qt::DirectConnection);
 	connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()), Qt::DirectConnection);
-}
+
+	QByteArray txData;
+	txData.append(QByteArray::fromRawData("\x03\x06", 2));
+	txData.append(65);
+	txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00", 8));
+	txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+	socket->write(txData);
+}	
 
 void TcpServer::readyRead() {
 	QByteArray rxData = socket->readAll();
@@ -65,10 +72,10 @@ void TcpServer::timeout() {
 
 	QByteArray txData;
 	txData.append(QByteArray::fromHex("0306"));
-	txData.append(QByteArray::fromHex("0002"));
-	txData.append(QByteArray::fromHex("000000000000000000"));
+	txData.append(QByteArray::fromHex("2000"));
+	txData.append(QByteArray::fromHex("0000000000000000"));
 	txData.append(QByteArray::fromHex("0D05"));
 
 	socket->write(txData);
 	qDebug() << "Transmit Data(To UI) : " + txData;
-}
+} 

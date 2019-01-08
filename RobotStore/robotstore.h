@@ -71,7 +71,7 @@ private:
 	Ui::RobotStoreClass ui;
 	TcpServer *MR;
 	TcpClient *PLC;
-	bool connectStateMR, connectStatePLC, robotPositionState;
+	bool connectStateMR, connectStatePLC, robotPositionState, PLCReady;
 	QTimer *timer;
 
 	SlidingStackedWidget *mainUI;

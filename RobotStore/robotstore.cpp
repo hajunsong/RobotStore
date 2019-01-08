@@ -18,6 +18,7 @@ RobotStore::RobotStore(QWidget *parent) : QMainWindow(parent) {
 
 	connectStateMR = false;
 	connectStatePLC = false;
+	PLCReady = false;
 
 	connect(PLC->socket, SIGNAL(connected()), this, SLOT(onConnectPLC()));
 	connect(PLC->socket, SIGNAL(readyRead()), this, SLOT(readMessageFromPLC()));
@@ -153,6 +154,8 @@ void RobotStore::listenBtnSlot() {
 
 	colorIndex = -1;
 	patternIndex = -1;
+
+	ui.listenBtn->setDisabled(true);
 }
 
 void RobotStore::connectBtnSlot() {
@@ -184,16 +187,27 @@ void RobotStore::readMessageFromPLC() {
 	rxMessage = "Receive Data(From PLC) : " + rxData;
 	ui.tcpMessage->append(rxMessage);
 
-	QChar *ch = new QChar[rxData.length()];
+	char *ch = new char[rxData.length()];
 	for (int j = 0; j < rxData.length(); j++) {
 		ch[j] = rxData.at(j);
-		qDebug() << QString(ch[j]).toUtf8();
 	}
-	if (ch[0] == 0x03 && ch[1] == 0x06) {
-		if (ch[3] == 0x02) {
-			qDebug() << "Manipulator operation complete";
-			mainUI->slideInIdx(thankPage, mainUI->TOP2BOTTOM);
-			timer->start();
+	qDebug() << "Receive Data(From PLC) : " + rxData;
+	
+	if (PLCReady) {
+		if (ch[0] == 0x03 && ch[1] == 0x06) {
+			if ((ch[2] & 0b00100000) == 0b00100000) {
+				qDebug() << "Manipulator operation complete";
+				mainUI->slideInIdx(thankPage, mainUI->TOP2BOTTOM);
+				timer->start();
+			}
+		}
+	}
+	else {
+		if (ch[0] == 0x03 && ch[1] == 0x06) {
+			if ((ch[2] & 0b01000000) == 0b01000000) {
+				qDebug() << "Manipulator ready!!";
+				PLCReady = true;
+			}
 		}
 	}
 	delete[] ch;
@@ -210,6 +224,7 @@ void RobotStore::timeout() {
 	mainUI->slideInIdx(startPage, mainUI->TOP2BOTTOM);
 	selectPageInit();
 	MR->socket->write(QString::number(0).toUtf8());
+	robotPositionState = false;
 }
 
 void RobotStore::startBtnPressedSlot() {
@@ -298,7 +313,7 @@ void RobotStore::orderBtnReleasedSlot() {
 }
 
 void RobotStore::checkAllConnectState() {
-	if (connectStateMR && connectStatePLC) {
+	if (connectStateMR && connectStatePLC && PLCReady) {
 		ui.uiStartBtn->setEnabled(true);
 	}
 	else {
