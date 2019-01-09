@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'robotstore.ui'
 **
-** Created by: Qt User Interface Compiler version 5.11.2
+** Created by: Qt User Interface Compiler version 5.12.0
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -52,43 +52,43 @@ public:
     void setupUi(QMainWindow *RobotStoreClass)
     {
         if (RobotStoreClass->objectName().isEmpty())
-            RobotStoreClass->setObjectName(QStringLiteral("RobotStoreClass"));
+            RobotStoreClass->setObjectName(QString::fromUtf8("RobotStoreClass"));
         RobotStoreClass->resize(1246, 873);
         centralWidget = new QWidget(RobotStoreClass);
-        centralWidget->setObjectName(QStringLiteral("centralWidget"));
+        centralWidget->setObjectName(QString::fromUtf8("centralWidget"));
         layoutWidget = new QWidget(centralWidget);
-        layoutWidget->setObjectName(QStringLiteral("layoutWidget"));
+        layoutWidget->setObjectName(QString::fromUtf8("layoutWidget"));
         layoutWidget->setGeometry(QRect(40, 30, 501, 441));
         gridLayout = new QGridLayout(layoutWidget);
         gridLayout->setSpacing(6);
         gridLayout->setContentsMargins(11, 11, 11, 11);
-        gridLayout->setObjectName(QStringLiteral("gridLayout"));
+        gridLayout->setObjectName(QString::fromUtf8("gridLayout"));
         gridLayout->setContentsMargins(0, 0, 0, 0);
         horizontalLayout = new QHBoxLayout();
         horizontalLayout->setSpacing(6);
-        horizontalLayout->setObjectName(QStringLiteral("horizontalLayout"));
+        horizontalLayout->setObjectName(QString::fromUtf8("horizontalLayout"));
         label = new QLabel(layoutWidget);
-        label->setObjectName(QStringLiteral("label"));
+        label->setObjectName(QString::fromUtf8("label"));
 
         horizontalLayout->addWidget(label);
 
         plcIP = new QLineEdit(layoutWidget);
-        plcIP->setObjectName(QStringLiteral("plcIP"));
+        plcIP->setObjectName(QString::fromUtf8("plcIP"));
 
         horizontalLayout->addWidget(plcIP);
 
         label_2 = new QLabel(layoutWidget);
-        label_2->setObjectName(QStringLiteral("label_2"));
+        label_2->setObjectName(QString::fromUtf8("label_2"));
 
         horizontalLayout->addWidget(label_2);
 
         plcPort = new QLineEdit(layoutWidget);
-        plcPort->setObjectName(QStringLiteral("plcPort"));
+        plcPort->setObjectName(QString::fromUtf8("plcPort"));
 
         horizontalLayout->addWidget(plcPort);
 
         connectBtn = new QPushButton(layoutWidget);
-        connectBtn->setObjectName(QStringLiteral("connectBtn"));
+        connectBtn->setObjectName(QString::fromUtf8("connectBtn"));
 
         horizontalLayout->addWidget(connectBtn);
 
@@ -97,29 +97,29 @@ public:
 
         horizontalLayout_2 = new QHBoxLayout();
         horizontalLayout_2->setSpacing(6);
-        horizontalLayout_2->setObjectName(QStringLiteral("horizontalLayout_2"));
+        horizontalLayout_2->setObjectName(QString::fromUtf8("horizontalLayout_2"));
         label_4 = new QLabel(layoutWidget);
-        label_4->setObjectName(QStringLiteral("label_4"));
+        label_4->setObjectName(QString::fromUtf8("label_4"));
 
         horizontalLayout_2->addWidget(label_4);
 
         serverIP = new QLineEdit(layoutWidget);
-        serverIP->setObjectName(QStringLiteral("serverIP"));
+        serverIP->setObjectName(QString::fromUtf8("serverIP"));
 
         horizontalLayout_2->addWidget(serverIP);
 
         label_3 = new QLabel(layoutWidget);
-        label_3->setObjectName(QStringLiteral("label_3"));
+        label_3->setObjectName(QString::fromUtf8("label_3"));
 
         horizontalLayout_2->addWidget(label_3);
 
         serverPort = new QLineEdit(layoutWidget);
-        serverPort->setObjectName(QStringLiteral("serverPort"));
+        serverPort->setObjectName(QString::fromUtf8("serverPort"));
 
         horizontalLayout_2->addWidget(serverPort);
 
         listenBtn = new QPushButton(layoutWidget);
-        listenBtn->setObjectName(QStringLiteral("listenBtn"));
+        listenBtn->setObjectName(QString::fromUtf8("listenBtn"));
 
         horizontalLayout_2->addWidget(listenBtn);
 
@@ -127,25 +127,25 @@ public:
         gridLayout->addLayout(horizontalLayout_2, 1, 0, 1, 1);
 
         tcpMessage = new QTextBrowser(layoutWidget);
-        tcpMessage->setObjectName(QStringLiteral("tcpMessage"));
+        tcpMessage->setObjectName(QString::fromUtf8("tcpMessage"));
 
         gridLayout->addWidget(tcpMessage, 2, 0, 1, 1);
 
         uiStartBtn = new QPushButton(layoutWidget);
-        uiStartBtn->setObjectName(QStringLiteral("uiStartBtn"));
+        uiStartBtn->setObjectName(QString::fromUtf8("uiStartBtn"));
 
         gridLayout->addWidget(uiStartBtn, 3, 0, 1, 1);
 
         RobotStoreClass->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(RobotStoreClass);
-        menuBar->setObjectName(QStringLiteral("menuBar"));
+        menuBar->setObjectName(QString::fromUtf8("menuBar"));
         menuBar->setGeometry(QRect(0, 0, 1246, 21));
         RobotStoreClass->setMenuBar(menuBar);
         mainToolBar = new QToolBar(RobotStoreClass);
-        mainToolBar->setObjectName(QStringLiteral("mainToolBar"));
+        mainToolBar->setObjectName(QString::fromUtf8("mainToolBar"));
         RobotStoreClass->addToolBar(Qt::TopToolBarArea, mainToolBar);
         statusBar = new QStatusBar(RobotStoreClass);
-        statusBar->setObjectName(QStringLiteral("statusBar"));
+        statusBar->setObjectName(QString::fromUtf8("statusBar"));
         RobotStoreClass->setStatusBar(statusBar);
 
         retranslateUi(RobotStoreClass);
