@@ -2,12 +2,12 @@
 
 RobotStore::RobotStore(QWidget *parent) : QMainWindow(parent) {
 	ui.setupUi(this);
-	this->setFixedSize(1900, 1000);
+	this->setFixedSize(1920, 1080);
 	this->setWindowTitle("Robot Store");
 
-	ui.plcIP->setText("127.0.0.1");
-	ui.serverIP->setText("127.0.0.1");
-	ui.plcPort->setText("9999");
+	ui.plcIP->setText("192.168.100.4");
+	ui.serverIP->setText("192.168.173.1");
+	ui.plcPort->setText("5003");
 	ui.serverPort->setText("8888");
 
 	connect(ui.listenBtn, SIGNAL(clicked()), this, SLOT(listenBtnSlot()));
@@ -58,6 +58,11 @@ RobotStore::RobotStore(QWidget *parent) : QMainWindow(parent) {
 	resetBtn->hide();
 	connect(resetBtn, SIGNAL(clicked()), this, SLOT(resetBtnSlot()));
 
+	clerkLabel = new QLabel(&pageWidget[startPage]);
+	clerkLabel->setGeometry(pageWidget[startPage].rect());
+	labelDrawImage(clerkLabel, imageHeader + clerkIcon, 0.2);
+	clerkLabel->hide();
+
 	// 2 Page
 	int pageWidth = pageWidget[selectPage].width(), pageHeight = pageWidget[selectPage].height();
 	for (int i = 0; i < sizeColor; i++) {
@@ -83,11 +88,6 @@ RobotStore::RobotStore(QWidget *parent) : QMainWindow(parent) {
 	connect(orderBtn, SIGNAL(mousePressed()), this, SLOT(orderBtnPressedSlot()));
 	connect(orderBtn, SIGNAL(mouseReleased()), this, SLOT(orderBtnReleasedSlot()));
 
-	clerkLabel = new QLabel(&pageWidget[selectPage]);
-	clerkLabel->setGeometry(pageWidget[selectPage].rect());
-	labelDrawImage(clerkLabel, imageHeader + clerkIcon, 0.2);
-	clerkLabel->hide();
-
 	// 3 Page
 	itemLabel = new QLabel(&pageWidget[itemPage]);
 	itemLabel->setGeometry(pageWidth*0.2, pageHeight*0.2, pageWidth*0.6, pageHeight*0.6);
@@ -105,6 +105,16 @@ RobotStore::RobotStore(QWidget *parent) : QMainWindow(parent) {
 	selectPageInit();
 
 	robotPositionState = false;
+
+	delayTimer = new QTimer(this);
+	delayTimer->setInterval(3000);
+	connect(delayTimer, SIGNAL(timeout()), this, SLOT(delayTimeout()));
+
+	move_flag = false;
+	start_flag = false;
+	single_flag = false;
+
+	connect(ui.cbSingleTest, SIGNAL(clicked()), this, SLOT(singleCbSlot()));
 }
 
 RobotStore::~RobotStore() {
@@ -132,6 +142,8 @@ RobotStore::~RobotStore() {
 
 	delete[] pageWidget;
 	delete mainUI;
+
+	delete delayTimer;
 }
 
 void RobotStore::selectPageInit() {
@@ -195,16 +207,36 @@ void RobotStore::readMessageFromPLC() {
 	
 	if (PLCReady) {
 		if (ch[0] == 0x03 && ch[1] == 0x06) {
-			if ((ch[2] & 0b00100000) == 0b00100000) {
+			if (ch[2] == 0x50) 
+			//if ((ch[2] & 0b00010000) == 0b00010000)
+			{
+				qDebug() << "Manipulator operating";
+			}
+			else if (ch[2] == 0x60  && move_flag)
+			//else if ((ch[2] & 0b00100000) == 0b00100000 && move_flag)
+			{
 				qDebug() << "Manipulator operation complete";
 				mainUI->slideInIdx(thankPage, mainUI->TOP2BOTTOM);
 				timer->start();
+
+				if (!single_flag) {
+					QByteArray txDataMR;
+					txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
+					txDataMR.append(QByteArray::fromRawData("\x00", 1));
+					txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
+					MR->socket->write(txDataMR);
+					qDebug() << "Transmit Data(To MR) : " + txDataMR;
+				}
+
+				move_flag = false;
 			}
 		}
 	}
 	else {
 		if (ch[0] == 0x03 && ch[1] == 0x06) {
-			if ((ch[2] & 0b01000000) == 0b01000000) {
+			if ((ch[2] & 0b01000000) == 0b01000000) 
+			//if (ch[2] == 0x60)
+			{
 				qDebug() << "Manipulator ready!!";
 				PLCReady = true;
 			}
@@ -223,8 +255,8 @@ void RobotStore::timeout() {
 	timer->stop();
 	mainUI->slideInIdx(startPage, mainUI->TOP2BOTTOM);
 	selectPageInit();
-	MR->socket->write(QString::number(0).toUtf8());
-	robotPositionState = false;
+	if (!single_flag)
+		robotPositionState = false;
 }
 
 void RobotStore::startBtnPressedSlot() {
@@ -232,19 +264,22 @@ void RobotStore::startBtnPressedSlot() {
 }
 
 void RobotStore::startBtnReleasedSlot() {
-	clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
-	mainUI->slideInIdx(selectPage, mainUI->BOTTOM2TOP);
+	clerkLabel->show();
 
-	QByteArray txData;
-	txData.append(QByteArray::fromRawData("\x02\x05", 2));
-	txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 10));
-	txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+	if (!single_flag) {
+		QByteArray txDataMR;
+		txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
+		txDataMR.append(QByteArray::fromRawData("\x01", 1));
+		txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
+		MR->socket->write(txDataMR);
+		qDebug() << "Transmit Data(To MR) : " + txDataMR;
+	}
+	else {
+		clerkLabel->hide();
 
-	PLC->socket->write(txData);
-	qDebug() << "Transmit Data(To PLC) : " + txData;
-
-	MR->socket->write(QString::number(1).toUtf8());
-	qDebug() << "Transmit Data(To PLC) : " + QString::number(1);
+		clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
+		mainUI->slideInIdx(selectPage, mainUI->BOTTOM2TOP);
+	}
 }
 
 void RobotStore::resetBtnSlot() {
@@ -289,35 +324,51 @@ void RobotStore::orderBtnPressedSlot() {
 }
 
 void RobotStore::orderBtnReleasedSlot() {
-	if (robotPositionState) {
-		if (colorIndex >= 0 && patternIndex >= 0) {
-			clickLabelDrawImage(orderBtn, imageHeader + orderIcon[1], 0.2);
+	if (colorIndex >= 0 && patternIndex >= 0) {
+		clickLabelDrawImage(orderBtn, imageHeader + orderIcon[1], 0.2);
 
-			mainUI->slideInIdx(itemPage, mainUI->BOTTOM2TOP);
-			int itemIndex = colorIndex * sizePattern + patternIndex;
-			labelDrawImage(itemLabel, imageHeader + imageIcon[itemIndex], 4);
+		mainUI->slideInIdx(itemPage, mainUI->BOTTOM2TOP);
+		int itemIndex = colorIndex * sizePattern + patternIndex;
+		labelDrawImage(itemLabel, imageHeader + imageIcon[itemIndex], 4);
 
-			QByteArray txData;
-			txData.append(QByteArray::fromRawData("\x02\x05", 2));
-			txData.append(itemIndex + 1);
-			txData.append(QByteArray::fromRawData("\x01\x00\x00\x00\x00\x00\x00\x00\x00", 9));
-			txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+		QByteArray txData;
+		txData.append(QByteArray::fromRawData("\x02\x05", 2));
+		txData.append(2*(itemIndex + 1) - 1);
+		txData.append(QByteArray::fromRawData("\x01", 1));
+		txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00", 8));
+		txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+		PLC->socket->write(txData);
+		qDebug() << "Transmit Data(To PLC) : " + txData;
 
-			PLC->socket->write(txData);
-			qDebug() << "Transmit Data(To PLC) : " + txData;
+		if (!single_flag) {
+			QByteArray txDataMR;
+			txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
+			txDataMR.append(QByteArray::fromRawData("\x02", 1));
+			txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
+
+			MR->socket->write(txDataMR);
+			qDebug() << "Transmit Data(To MR) : " + txDataMR;
 		}
-	}
-	else {
-		clerkLabel->show();
+
+		delayTimer->start();
 	}
 }
 
 void RobotStore::checkAllConnectState() {
-	if (connectStateMR && connectStatePLC && PLCReady) {
+	if (connectStateMR && PLCReady) {
 		ui.uiStartBtn->setEnabled(true);
 	}
 	else {
 		ui.uiStartBtn->setDisabled(true);
+	}
+	if (single_flag) {
+		if (PLCReady) {
+			ui.uiStartBtn->setEnabled(true);
+			robotPositionState = true;
+		}
+		else {
+			ui.uiStartBtn->setDisabled(true);
+		}
 	}
 }
 
@@ -361,12 +412,28 @@ void RobotStore::readMessageFromMR() {
 	QByteArray rxData = MR->socket->readAll();
 	QString rxMessage;
 
-	rxMessage = "Receive Data(From MR) : " + rxData;
-	ui.tcpMessage->append(rxMessage);
+	qDebug() << "Receive Data(From MR) : " + rxData;
+	QChar *ch = new QChar[rxData.length()];
+	for (int j = 0; j < rxData.length(); j++) {
+		ch[j] = rxData.at(j);
+	}
+	if (ch[0] == 0x02 && ch[1] == 0x05) {
+		if (ch[2] == 0x02) {
+			qDebug() << "Mobile robot arrives in front of guest";
+			robotPositionState = true;
+			clerkLabel->hide();
 
-	if (rxData.toInt() == 2) {
-		robotPositionState = true;
-		clerkLabel->hide();
+			clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
+			mainUI->slideInIdx(selectPage, mainUI->BOTTOM2TOP);
+
+			QByteArray txData;
+			txData.append(QByteArray::fromRawData("\x02\x05", 2));
+			txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+			txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+
+			PLC->socket->write(txData);
+			qDebug() << "Transmit Data(To PLC) : " + txData;
+		}
 	}
 }
 
@@ -374,4 +441,22 @@ void RobotStore::disconnected() {
 	connectStateMR = false;
 	qDebug() << QString::number(MR->socket->socketDescriptor()) + " Disconnected";
 	MR->socket->deleteLater();
+}
+
+void RobotStore::delayTimeout() {
+	QByteArray txData;
+	txData.append(QByteArray::fromRawData("\x02\x05", 2));
+	txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", 10));
+	txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+
+	PLC->socket->write(txData);
+	qDebug() << "Transmit Data(To PLC) : " + txData;
+
+	delayTimer->stop();
+
+	move_flag = true;
+}
+
+void RobotStore::singleCbSlot() {
+	single_flag = ui.cbSingleTest->isChecked();
 }

@@ -1,7 +1,7 @@
 /********************************************************************************
 ** Form generated from reading UI file 'robotstore.ui'
 **
-** Created by: Qt User Interface Compiler version 5.12.0
+** Created by: Qt User Interface Compiler version 5.12.2
 **
 ** WARNING! All changes made in this file will be lost when recompiling UI file!
 ********************************************************************************/
@@ -11,6 +11,7 @@
 
 #include <QtCore/QVariant>
 #include <QtWidgets/QApplication>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QGridLayout>
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QLabel>
@@ -45,6 +46,7 @@ public:
     QPushButton *listenBtn;
     QTextBrowser *tcpMessage;
     QPushButton *uiStartBtn;
+    QCheckBox *cbSingleTest;
     QMenuBar *menuBar;
     QToolBar *mainToolBar;
     QStatusBar *statusBar;
@@ -136,6 +138,9 @@ public:
 
         gridLayout->addWidget(uiStartBtn, 3, 0, 1, 1);
 
+        cbSingleTest = new QCheckBox(centralWidget);
+        cbSingleTest->setObjectName(QString::fromUtf8("cbSingleTest"));
+        cbSingleTest->setGeometry(QRect(560, 30, 83, 16));
         RobotStoreClass->setCentralWidget(centralWidget);
         menuBar = new QMenuBar(RobotStoreClass);
         menuBar->setObjectName(QString::fromUtf8("menuBar"));
@@ -163,6 +168,7 @@ public:
         label_3->setText(QApplication::translate("RobotStoreClass", "Port : ", nullptr));
         listenBtn->setText(QApplication::translate("RobotStoreClass", "Listen", nullptr));
         uiStartBtn->setText(QApplication::translate("RobotStoreClass", "Start UI", nullptr));
+        cbSingleTest->setText(QApplication::translate("RobotStoreClass", "SingleTest", nullptr));
     } // retranslateUi
 
 };

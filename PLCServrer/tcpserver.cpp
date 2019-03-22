@@ -7,7 +7,7 @@ TcpServer::TcpServer(QObject *parent) : QTcpServer(parent) {
 }
 
 void TcpServer::startServer() {
-	if (!this->listen(QHostAddress::Any, 9999))
+	if (!this->listen(QHostAddress("192.168.173.5"), 9999))
 	{
 		qDebug() << "Could not start server";
 	}

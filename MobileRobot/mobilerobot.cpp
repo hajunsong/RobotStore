@@ -7,7 +7,7 @@ MobileRobot::MobileRobot(QWidget *parent) : QMainWindow(parent)
 	this->setFixedSize(500, 400);
 	this->setWindowTitle("Mobile Robot");
 
-	ui.ipAddress->setText("127.0.0.1");
+	ui.ipAddress->setText("169.254.125.4");
 
 	connectState = false;
 	client = new TcpClient(this);
@@ -52,22 +52,33 @@ void MobileRobot::readMessage() {
 	rxMessage = "Receive Data : " + rxData;
 	ui.tcpMessage->append(rxMessage);
 
-	if (rxData.toInt() == 1) {
-		guestState = true;
-		ui.guestCbox->setChecked(true);
-		ui.positionBtn->setEnabled(true);
+	QChar *ch = new QChar[rxData.length()];
+	for (int j = 0; j < rxData.length(); j++) {
+		ch[j] = rxData.at(j);
 	}
-	else if (rxData.toInt() == 0) {
-		guestState = false;
-		ui.guestCbox->setChecked(false);
-		ui.positionBtn->setDisabled(true);
+	if (ch[0] == 0x02 && ch[1] == 0x05) {
+		if (ch[2] == 0x01) {
+			guestState = true;
+			ui.guestCbox->setChecked(true);
+			ui.positionBtn->setEnabled(true);
+		}
+		else if (ch[2] == 0x00) {
+			guestState = false;
+			ui.guestCbox->setChecked(false);
+			ui.positionBtn->setDisabled(true);
+		}
 	}
 }
 
 void MobileRobot::positionBtnSlot() {
 	ui.positionBtn->setDisabled(true);
-	QString txData = QString::number(2);
-	client->socket->write(txData.toUtf8());
+
+	QByteArray txData;
+	txData.append(QByteArray::fromRawData("\x02\x05", 2));
+	txData.append(QByteArray::fromRawData("\x02", 1));
+	txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+
+	client->socket->write(txData);
 
 	QString txMessage = "Transmit Data : " + txData;
 	ui.tcpMessage->append(txMessage);

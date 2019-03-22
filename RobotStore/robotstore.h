@@ -19,6 +19,10 @@
 #include <QMouseEvent>
 #include <QEvent>
 
+#include <iostream>
+
+using namespace std;
+
 const int sizeColor = 6, sizePattern = 7;
 const QString imageHeader = "icons/";
 const QString imageIcon[sizeColor*sizePattern] = { "a_1@2x","a_2@2x","a_3@2x","a_4@2x","a_5@2x","a_6@2x","a_7@2x",
@@ -66,6 +70,9 @@ public slots:
 	void combineItem();
 	void orderBtnPressedSlot();
 	void orderBtnReleasedSlot();
+	void delayTimeout();
+
+	void singleCbSlot();
 
 private:
 	Ui::RobotStoreClass ui;
@@ -83,11 +90,17 @@ private:
 	QClickLabel *colorBtn[6], *patternBtn[7], *orderBtn;
 	QWidget *bottomLayout;
 	QLabel *clerkLabel;
+	QTimer *delayTimer;
 	// 3 Page
 	QLabel *itemLabel, *waitLabel;
 	int colorIndex, patternIndex;
 	// 4 Page
+
 	QLabel *thankLabel;
+
+	bool move_flag;
+	bool start_flag;
+	bool single_flag;
 
 	void selectPageInit();
 	void checkAllConnectState();
