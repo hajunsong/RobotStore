@@ -1,3 +1,0 @@
-1. 특정 폴더에 exe 파일 이동
-2. cmd 실행
-3. qt_dir\version_dir\msvc2017_64\bin\windeployqt *.exe
