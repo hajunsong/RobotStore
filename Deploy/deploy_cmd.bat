@@ -1,4 +1,5 @@
 @echo off
+ mkdir execute
 copy ..\MobileRobot\Release\release\MobileRobot.exe .\execute\
 copy ..\PLCServer\Release\release\PLCServer.exe .\execute\
 copy ..\RobotStore\Release\release\RobotStore.exe .\execute\
