@@ -19,20 +19,24 @@
 #include <QMouseEvent>
 #include <QEvent>
 
+#include "logger.h"
+#include <QDateTime>
+#include <direct.h>
+
 #include <iostream>
 using namespace std;
 
-const int sizeColor = 6, sizePattern = 7;
+const int sizeColor = 6, sizePattern = 6;
 const QString imageHeader = "../icons/";
-const QString imageIcon[sizeColor*sizePattern] = { "a_1@2x","a_2@2x","a_3@2x","a_4@2x","a_5@2x","a_6@2x","a_7@2x",
-                                                   "b_1@2x","b_2@2x","b_3@2x","b_4@2x","b_5@2x","b_6@2x","b_7@2x",
-                                                   "c_1@2x","c_2@2x","c_3@2x","c_4@2x","c_5@2x","c_6@2x","c_7@2x",
-                                                   "d_1@2x","d_2@2x","d_3@2x","d_4@2x","d_5@2x","d_6@2x","d_7@2x",
-                                                   "e_1@2x","e_2@2x","e_3@2x","e_4@2x","e_5@2x","e_6@2x","e_7@2x",
-                                                   "f_1@2x","f_2@2x","f_3@2x","f_4@2x","f_5@2x","f_6@2x","f_7@2x" };
+const QString imageIcon[sizeColor*sizePattern] = { "a_1@2x","a_2@2x","a_3@2x","a_4@2x","a_5@2x","a_6@2x"/*,"a_7@2x*"*/,
+                                                   "b_1@2x","b_2@2x","b_3@2x","b_4@2x","b_5@2x","b_6@2x"/*,"b_7@2x*"*/,
+                                                   "c_1@2x","c_2@2x","c_3@2x","c_4@2x","c_5@2x","c_6@2x"/*,"c_7@2x*"*/,
+                                                   "d_1@2x","d_2@2x","d_3@2x","d_4@2x","d_5@2x","d_6@2x"/*,"d_7@2x*"*/,
+                                                   "e_1@2x","e_2@2x","e_3@2x","e_4@2x","e_5@2x","e_6@2x"/*,"e_7@2x*"*/,
+                                                   "f_1@2x","f_2@2x","f_3@2x","f_4@2x","f_5@2x","f_6@2x"/*,"f_7@2x*"*/ };
 const QString startIcon[2] = { "start_P_hangul", "start_R_hangul" };
 const QString colorIcon[sizeColor] = { "n1", "n2", "n3", "n4", "n5", "n6" };
-const QString patternIcon[sizePattern] = { "g1", "g2", "g3", "g4", "g5", "g6", "g7" };
+const QString patternIcon[sizePattern] = { "g1", "g2", "g3", "g4", "g5", "g6"/*, "g7" */};
 const QString orderIcon[3] = { "choose_hangul", "order_hangul", "order_1_hangul" };
 const QString clerkIcon = "clerk_hangul";
 const QString thankIcon = "thank_hangul";
@@ -50,7 +54,9 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
-
+    void ReadSettings();    // Load up qt program settings at startup
+    void WriteSettings();   // Save qt program settings when closing
+    void closeEvent(QCloseEvent *event);    // Overload function
 public slots:
     void listenBtnSlot();
     void readMessageFromMR();
@@ -109,6 +115,9 @@ private:
     void checkAllConnectState();
     void clickLabelDrawImage(QClickLabel *clickLabel, QString imagePath, double scale);
     void labelDrawImage(QLabel *label, QString imagePath, double scale);
+
+    QString fileName;
+    Logger *logger;
 };
 
 #endif // MAINWINDOW_H

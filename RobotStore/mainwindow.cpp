@@ -8,10 +8,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->setFixedSize(1920, 1080);
     this->setWindowTitle("Robot Store");
 
-    ui->plcIP->setText("192.168.100.4");
-    ui->serverIP->setText("192.168.173.1");
-    ui->plcPort->setText("5003");
-    ui->serverPort->setText("8888");
+    ReadSettings();
 
     connect(ui->listenBtn, SIGNAL(clicked()), this, SLOT(listenBtnSlot()));
     connect(ui->connectBtn, SIGNAL(clicked()), this, SLOT(connectBtnSlot()));
@@ -37,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     mainUI->hide();
     mainUI->setGeometry(this->rect());
 
-    quint64 pages = 4;
+    uint pages = 4;
     pageWidget = new QWidget[pages];
     for (quint64 i = 0; i < pages; i++) {
         pageWidget[i].setGeometry(mainUI->rect());
@@ -79,7 +76,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     for (int i = 0; i < sizePattern; i++) {
         patternBtn[i] = new QClickLabel(&pageWidget[selectPage]);
         patternBtn[i]->setObjectName("Pattern " + QString::number(i + 1));
-        patternBtn[i]->setGeometry(static_cast<int>(pageWidth*(0.035 + i * 0.13)), static_cast<int>(pageHeight / 3 * 1.2), pageWidth / 7, pageHeight / 3);
+//        patternBtn[i]->setGeometry(static_cast<int>(pageWidth*(0.035 + i * 0.13)), static_cast<int>(pageHeight / 3 * 1.2), pageWidth / 7, pageHeight / 3);
+        patternBtn[i]->setGeometry(static_cast<int>(pageWidth*(0.04 + i * 0.15)), static_cast<int>(pageHeight / 3 * 1.2), pageWidth / 6, pageHeight / 3);
         connect(patternBtn[i], SIGNAL(mousePressed()), this, SLOT(patternBtnPressedSlot()));
         connect(patternBtn[i], SIGNAL(mouseReleased()), this, SLOT(combineItem()));
     }
@@ -118,6 +116,12 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     single_flag = false;
 
     connect(ui->cbSingleTest, SIGNAL(clicked()), this, SLOT(singleCbSlot()));
+
+    QDateTime *date = new QDateTime();
+    _mkdir("../logging");
+    fileName = "../logging/" + date->currentDateTime().toString("yyyy-MM-dd") + ".txt";
+    logger = new Logger(this, fileName);
+    logger->write("------- Application Startup --------");
 }
 
 MainWindow::~MainWindow()
@@ -149,12 +153,47 @@ MainWindow::~MainWindow()
 
     delete delayTimer;
 
+    logger->write("------- Application Finished --------");
+    delete logger;
+
     delete ui;
 }
 
+void MainWindow::ReadSettings()
+{
+    QSettings settings("Robot Store", "UI Project");
+    //     restoreGeometry(settings.value("geometry").toByteArray());
+    //     restoreState(settings.value("windowState").toByteArray());
+    QString PLC_Server_IP = settings.value("PLC_Server_IP").toString();
+    QString PLC_Server_PORT = settings.value("PLC_Server_PORT").toString();
+    QString Server_IP = settings.value("Server_IP").toString();
+    QString Server_PORT = settings.value("Server_PORT").toString();
+    ui->plcIP->setText(PLC_Server_IP);
+    ui->plcPort->setText(PLC_Server_PORT);
+    ui->serverIP->setText(Server_IP);
+    ui->serverPort->setText(Server_PORT);
+}
+
+void MainWindow::WriteSettings()
+{
+     QSettings settings("Robot Store", "UI Project");
+     settings.setValue("PLC_Server_IP", ui->plcIP->text());
+     settings.setValue("PLC_Server_PORT", ui->plcPort->text());
+     settings.setValue("Server_IP", ui->serverIP->text());
+     settings.setValue("Server_PORT", ui->serverPort->text());
+//     settings.setValue("geometry", saveGeometry());
+//     settings.setValue("windowState", saveState());
+}
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+    WriteSettings();
+    QMainWindow::closeEvent(event);
+}
+
 void MainWindow::selectPageInit() {
-    for (int i = 0; i < 6; i++) clickLabelDrawImage(colorBtn[i], imageHeader + colorIcon[i], 0.35);
-    for (int i = 0; i < 7; i++) clickLabelDrawImage(patternBtn[i], imageHeader + patternIcon[i], 0.35);
+    for (int i = 0; i < sizeColor; i++) clickLabelDrawImage(colorBtn[i], imageHeader + colorIcon[i], 0.35);
+    for (int i = 0; i < sizePattern; i++) clickLabelDrawImage(patternBtn[i], imageHeader + patternIcon[i], 0.35);
 
     orderBtn->setGeometry(bottomLayout->width() / 6, 0, bottomLayout->width() / 3 * 2, bottomLayout->height() / 5 * 4);
     clickLabelDrawImage(orderBtn, imageHeader + orderIcon[0], 0.2);
@@ -179,7 +218,8 @@ void MainWindow::listenBtnSlot() {
 void MainWindow::connectBtnSlot() {
     if (connectStatePLC) {
         PLC->socket->close();
-        ui->tcpMessage->append("PLC Server Close ...");
+        ui->tcpMessage->append("PLC Server Disconnect ...");
+        logger->write("PLC Server Disconnect ...");
         connectStatePLC = false;
         ui->connectBtn->setText("Connect");
         ui->uiStartBtn->setDisabled(true);
@@ -193,23 +233,24 @@ void MainWindow::connectBtnSlot() {
 
 void MainWindow::onConnectPLC() {
     ui->tcpMessage->append("PLC Server Connect complete ...");
+    logger->write("PLC Server Connect complete ...");
     connectStatePLC = true;
     ui->connectBtn->setText("Disconnect");
-    checkAllConnectState();
 }
 
 void MainWindow::readMessageFromPLC() {
     QString rxMessage;
     QByteArray rxData = PLC->socket->readAll();
 
-    rxMessage = "Receive Data(From PLC) : " + rxData;
+    rxMessage = "Receive Data(From PLC) : " + rxData.toHex();
     ui->tcpMessage->append(rxMessage);
+    logger->write(rxMessage);
 
-    char *ch = new char[static_cast<uint64_t>(rxData.length())];
+    char *ch = new char[static_cast<uint>(rxData.length())];
     for (int j = 0; j < rxData.length(); j++) {
         ch[j] = rxData.at(j);
     }
-    qDebug() << "Receive Data(From PLC) : " + rxData;
+    qDebug() << "Receive Data(From PLC) : " + rxData.toHex();
 
     if (PLCReady) {
         if (ch[0] == 0x03 && ch[1] == 0x06) {
@@ -217,11 +258,13 @@ void MainWindow::readMessageFromPLC() {
                 //if ((ch[2] & 0b00010000) == 0b00010000)
             {
                 qDebug() << "Manipulator operating";
+                logger->write("Manipulator operating");
             }
             else if (ch[2] == 0x60  && move_flag)
                 //else if ((ch[2] & 0b00100000) == 0b00100000 && move_flag)
             {
                 qDebug() << "Manipulator operation complete";
+                logger->write("Manipulator operation complete");
                 mainUI->slideInIdx(thankPage, mainUI->TOP2BOTTOM);
                 timer->start();
 
@@ -231,7 +274,8 @@ void MainWindow::readMessageFromPLC() {
                     txDataMR.append(QByteArray::fromRawData("\x00", 1));
                     txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
                     MR->socket->write(txDataMR);
-                    qDebug() << "Transmit Data(To MR) : " + txDataMR;
+                    qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+                    logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
                 }
 
                 move_flag = false;
@@ -244,7 +288,10 @@ void MainWindow::readMessageFromPLC() {
                 //if (ch[2] == 0x60)
             {
                 qDebug() << "Manipulator ready!!";
+                ui->tcpMessage->append("Manipulator ready!!");
+                logger->write("Manipulator ready!!");
                 PLCReady = true;
+                checkAllConnectState();
             }
         }
     }
@@ -252,7 +299,6 @@ void MainWindow::readMessageFromPLC() {
 }
 
 void MainWindow::uiStartBtnSlot() {
-
     ui->centralWidget->hide();
     mainUI->setHidden(false);
 }
@@ -278,7 +324,8 @@ void MainWindow::startBtnReleasedSlot() {
         txDataMR.append(QByteArray::fromRawData("\x01", 1));
         txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
         MR->socket->write(txDataMR);
-        qDebug() << "Transmit Data(To MR) : " + txDataMR;
+        qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+        logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
     }
     else {
         clerkLabel->hide();
@@ -344,7 +391,8 @@ void MainWindow::orderBtnReleasedSlot() {
         txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00", 8));
         txData.append(QByteArray::fromRawData("\x0D\x05", 2));
         PLC->socket->write(txData);
-        qDebug() << "Transmit Data(To PLC) : " + txData;
+        qDebug() << "Transmit Data(To PLC) : " + txData.toHex();
+        logger->write("Transmit Data(To PLC) : " + txData.toHex());
 
         if (!single_flag) {
             QByteArray txDataMR;
@@ -353,7 +401,8 @@ void MainWindow::orderBtnReleasedSlot() {
             txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
 
             MR->socket->write(txDataMR);
-            qDebug() << "Transmit Data(To MR) : " + txDataMR;
+            qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+            logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
         }
 
         delayTimer->start();
@@ -363,17 +412,12 @@ void MainWindow::orderBtnReleasedSlot() {
 void MainWindow::checkAllConnectState() {
     if (connectStateMR && PLCReady) {
         ui->uiStartBtn->setEnabled(true);
-    }
-    else {
-        ui->uiStartBtn->setDisabled(true);
+        uiStartBtnSlot();
     }
     if (single_flag) {
         if (PLCReady) {
-            ui->uiStartBtn->setEnabled(true);
+            uiStartBtnSlot();
             robotPositionState = true;
-        }
-        else {
-            ui->uiStartBtn->setDisabled(true);
         }
     }
 }
@@ -411,6 +455,8 @@ void MainWindow::connectedClient() {
     connectStateMR = true;
     connect(MR->socket, SIGNAL(readyRead()), this, SLOT(readMessageFromMR()), Qt::DirectConnection);
     connect(MR->socket, SIGNAL(disconnected()), this, SLOT(disconnected()), Qt::DirectConnection);
+    ui->tcpMessage->append("Mobile Robot Connected");
+    logger->write("Mobile Robot Connected");
     checkAllConnectState();
 }
 
@@ -418,14 +464,17 @@ void MainWindow::readMessageFromMR() {
     QByteArray rxData = MR->socket->readAll();
     QString rxMessage;
 
-    qDebug() << "Receive Data(From MR) : " + rxData;
-    QChar *ch = new QChar[static_cast<uint64_t>(rxData.length())];
+    qDebug() << "Receive Data(From MR) : " + rxData.toHex();
+    ui->tcpMessage->append("Receive Data(From MR) : " + rxData.toHex());
+    logger->write("Receive Data(From MR) : " + rxData.toHex());
+    QChar *ch = new QChar[static_cast<uint>(rxData.length())];
     for (int j = 0; j < rxData.length(); j++) {
         ch[j] = rxData.at(j);
     }
     if (ch[0] == 0x02 && ch[1] == 0x05) {
         if (ch[2] == 0x02) {
             qDebug() << "Mobile robot arrives in front of guest";
+            logger->write("Mobile robot arrives in front of guest");
             robotPositionState = true;
             clerkLabel->hide();
 
@@ -438,7 +487,8 @@ void MainWindow::readMessageFromMR() {
             txData.append(QByteArray::fromRawData("\x0D\x05", 2));
 
             PLC->socket->write(txData);
-            qDebug() << "Transmit Data(To PLC) : " + txData;
+            qDebug() << "Transmit Data(To PLC) : " + txData.toHex();
+            logger->write("Transmit Data(To PLC) : " + txData.toHex());
         }
     }
 }
@@ -446,6 +496,8 @@ void MainWindow::readMessageFromMR() {
 void MainWindow::disconnected() {
     connectStateMR = false;
     qDebug() << QString::number(MR->socket->socketDescriptor()) + " Disconnected";
+    ui->tcpMessage->append(QString::number(MR->socket->socketDescriptor()) + " Disconnected");
+    logger->write(QString::number(MR->socket->socketDescriptor()) + " Disconnected");
     MR->socket->deleteLater();
 }
 
@@ -456,7 +508,8 @@ void MainWindow::delayTimeout() {
     txData.append(QByteArray::fromRawData("\x0D\x05", 2));
 
     PLC->socket->write(txData);
-    qDebug() << "Transmit Data(To PLC) : " + txData;
+    qDebug() << "Transmit Data(To PLC) : " + txData.toHex();
+    logger->write("Transmit Data(To PLC) : " + txData.toHex());
 
     delayTimer->stop();
 
@@ -465,4 +518,9 @@ void MainWindow::delayTimeout() {
 
 void MainWindow::singleCbSlot() {
     single_flag = ui->cbSingleTest->isChecked();
+    logger->write("PLC single test " + QString::number(single_flag));
+    if (connectStatePLC){
+        PLCReady = true;
+        checkAllConnectState();
+    }
 }

@@ -50,12 +50,12 @@ void MainWindow::onConnectServer() {
 
 void MainWindow::readMessage() {
     QString rxMessage;
-    QString rxData = client->socket->readAll();
+    QByteArray rxData = client->socket->readAll();
 
-    rxMessage = "Receive Data : " + rxData;
+    rxMessage = "Receive Data : " + rxData.toHex();
     ui->tcpMessage->append(rxMessage);
 
-    QChar *ch = new QChar[rxData.length()];
+    char *ch = new char[rxData.length()];
     for (int j = 0; j < rxData.length(); j++) {
         ch[j] = rxData.at(j);
     }
@@ -65,7 +65,7 @@ void MainWindow::readMessage() {
             ui->guestCbox->setChecked(true);
             ui->positionBtn->setEnabled(true);
         }
-        else if (ch[2] == nullptr) {
+        else if (ch[2] == 0) {
             guestState = false;
             ui->guestCbox->setChecked(false);
             ui->positionBtn->setDisabled(true);
@@ -83,6 +83,6 @@ void MainWindow::positionBtnSlot() {
 
     client->socket->write(txData);
 
-    QString txMessage = "Transmit Data : " + txData;
+    QString txMessage = "Transmit Data : " + txData.toHex();
     ui->tcpMessage->append(txMessage);
 }

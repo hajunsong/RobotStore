@@ -2,3 +2,4 @@
 **/[Dd]ebug
 **/*.pro.user
 Deploy/execute/
+**/logging/

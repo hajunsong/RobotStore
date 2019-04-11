@@ -55,17 +55,17 @@ void TcpServer::incomingConnection(qintptr socketDescriptor) {
 
 void TcpServer::readyRead() {
 	QByteArray rxData = socket->readAll();
-	qDebug() << "Receive Data(From UI) : " + rxData;
-	QChar *ch = new QChar[rxData.length()];
+    qDebug() << "Receive Data(From UI) : " + rxData.toHex();
+    char *ch = new char[rxData.length()];
 	for (int j = 0; j < rxData.length(); j++) {
 		ch[j] = rxData.at(j);
 	}
 	if (ch[0] == 0x02 && ch[1] == 0x05) {
-        if (ch[2] >= 0x01 && ch[2] <= 0x2A) {
-			qDebug() << "Product Number is " + QString(ch[2]).toUtf8();
+        if (ch[2] >= 0x01 && ch[2] <= 0x48) {
+            qDebug() << "Product Number is " + QString::number(ch[2]);
             command_flag = true;
 		}
-        else if(ch[2] == nullptr && command_flag == true){
+        else if(ch[2] == 0 && command_flag == true){
             timer->start();
         }
 	}
@@ -87,7 +87,7 @@ void TcpServer::timeout() {
     txData.append(QByteArray::fromRawData("\x0D\x05", 2));
 
 	socket->write(txData);
-	qDebug() << "Transmit Data(To UI) : " + txData;
+    qDebug() << "Transmit Data(To UI) : " + txData.toHex();
 
     command_flag = false;
 } 
