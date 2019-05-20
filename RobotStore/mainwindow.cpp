@@ -122,6 +122,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     fileName = "../logging/" + date->currentDateTime().toString("yyyy-MM-dd") + ".txt";
     logger = new Logger(this, fileName);
     logger->write("------- Application Startup --------");
+
+    tcpTimer = new QTimer(this);
+    tcpTimer->setInterval(666);
+    connect(tcpTimer, SIGNAL(timeout()), this, SLOT(tcpTimeout()));
 }
 
 MainWindow::~MainWindow()
@@ -187,6 +191,12 @@ void MainWindow::WriteSettings()
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
+    if (connectStatePLC){
+        PLC->socket->close();
+    }
+    if (connectStateMR){
+        MR->socket->close();
+    }
     WriteSettings();
     QMainWindow::closeEvent(event);
 }
@@ -266,7 +276,6 @@ void MainWindow::readMessageFromPLC() {
                 qDebug() << "Manipulator operation complete";
                 logger->write("Manipulator operation complete");
                 mainUI->slideInIdx(thankPage, mainUI->TOP2BOTTOM);
-                timer->start();
 
                 if (!single_flag) {
                     QByteArray txDataMR;
@@ -277,6 +286,9 @@ void MainWindow::readMessageFromPLC() {
                     qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
                     logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
                 }
+                else{
+                    timer->start();
+                }
 
                 move_flag = false;
             }
@@ -284,8 +296,9 @@ void MainWindow::readMessageFromPLC() {
     }
     else {
         if (ch[0] == 0x03 && ch[1] == 0x06) {
-            if ((ch[2] & 0b01000000) == 0b01000000)
+//            if ((ch[2] & 0b01000000) == 0b01000000)
                 //if (ch[2] == 0x60)
+            if (ch[2] == 0x40)
             {
                 qDebug() << "Manipulator ready!!";
                 ui->tcpMessage->append("Manipulator ready!!");
@@ -305,10 +318,12 @@ void MainWindow::uiStartBtnSlot() {
 
 void MainWindow::timeout() {
     timer->stop();
+    qDebug() << "Mobile robot arrives in front of docking station";
+    logger->write("Mobile robot arrives in front of docking station");
+
     mainUI->slideInIdx(startPage, mainUI->TOP2BOTTOM);
     selectPageInit();
-    if (!single_flag)
-        robotPositionState = false;
+    if (!single_flag) robotPositionState = false;
 }
 
 void MainWindow::startBtnPressedSlot() {
@@ -458,6 +473,7 @@ void MainWindow::connectedClient() {
     ui->tcpMessage->append("Mobile Robot Connected");
     logger->write("Mobile Robot Connected");
     checkAllConnectState();
+    tcpTimer->start();
 }
 
 void MainWindow::readMessageFromMR() {
@@ -490,6 +506,14 @@ void MainWindow::readMessageFromMR() {
             qDebug() << "Transmit Data(To PLC) : " + txData.toHex();
             logger->write("Transmit Data(To PLC) : " + txData.toHex());
         }
+        else if(ch[2] == 0x05){
+            qDebug() << "Mobile robot arrives in front of docking station";
+            logger->write("Mobile robot arrives in front of docking station");
+
+            mainUI->slideInIdx(startPage, mainUI->TOP2BOTTOM);
+            selectPageInit();
+            if (!single_flag) robotPositionState = false;
+        }
     }
 }
 
@@ -499,6 +523,8 @@ void MainWindow::disconnected() {
     ui->tcpMessage->append(QString::number(MR->socket->socketDescriptor()) + " Disconnected");
     logger->write(QString::number(MR->socket->socketDescriptor()) + " Disconnected");
     MR->socket->deleteLater();
+    MR->socket->close();
+    tcpTimer->stop();
 }
 
 void MainWindow::delayTimeout() {
@@ -523,4 +549,15 @@ void MainWindow::singleCbSlot() {
         PLCReady = true;
         checkAllConnectState();
     }
+}
+
+void MainWindow::tcpTimeout(){
+    tcpData.clear();
+    tcpData.append(QByteArray::fromRawData("\x02\x05", 2));
+    tcpData.append(QByteArray::fromRawData("\x05", 1));
+    tcpData.append(QByteArray::fromRawData("\x0D\x05", 2));
+    MR->socket->write(tcpData);
+
+    qDebug() << "Transmit Data(To MR) : " + tcpData.toHex();
+    logger->write("Transmit Data(To MR) : " + tcpData.toHex());
 }

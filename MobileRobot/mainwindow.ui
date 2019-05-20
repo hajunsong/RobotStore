@@ -50,8 +50,15 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="0">
+    <item row="3" column="0">
      <widget class="QTextBrowser" name="tcpMessage"/>
+    </item>
+    <item row="2" column="0">
+     <widget class="QPushButton" name="btnDockingStation">
+      <property name="text">
+       <string>Mobile robot arrives in fornt of docking station</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>

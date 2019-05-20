@@ -21,6 +21,7 @@ public slots:
     void onConnectServer();
     void readMessage();
     void positionBtnSlot();
+    void btnDockingStationSlot();
 
 private:
     Ui::MainWindow *ui;

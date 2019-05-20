@@ -20,15 +20,17 @@ public slots:
 	void readyRead();
 	void disconnected();
 	void timeout();
+    void tcpTimerTimeout();
 
 protected:
 	void incomingConnection(qintptr socketDescriptor);
 
 private:
 	QTcpSocket *socket;
-	QTimer *timer;
+    QTimer *timer, *tcpTimer;
     QString ip;
     quint16 port;
     bool command_flag;
+    QByteArray tcpData;
 };
 

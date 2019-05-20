@@ -20,6 +20,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     guestState = false;
 
     connect(ui->positionBtn, SIGNAL(clicked()), this, SLOT(positionBtnSlot()));
+    connect(ui->btnDockingStation, SIGNAL(clicked()), this, SLOT(btnDockingStationSlot()));
+
+    ui->positionBtn->setEnabled(false);
+    ui->guestCbox->setChecked(false);
+    ui->btnDockingStation->setEnabled(false);
 }
 
 MainWindow::~MainWindow()
@@ -69,6 +74,7 @@ void MainWindow::readMessage() {
             guestState = false;
             ui->guestCbox->setChecked(false);
             ui->positionBtn->setDisabled(true);
+            ui->btnDockingStation->setEnabled(true);
         }
     }
 }
@@ -85,4 +91,17 @@ void MainWindow::positionBtnSlot() {
 
     QString txMessage = "Transmit Data : " + txData.toHex();
     ui->tcpMessage->append(txMessage);
+}
+
+void MainWindow::btnDockingStationSlot(){
+    QByteArray txData;
+    txData.append(QByteArray::fromRawData("\x02\x05", 2));
+    txData.append(QByteArray::fromRawData("\x05", 1));
+    txData.append(QByteArray::fromRawData("\x0D\x05", 2));
+
+    client->socket->write(txData);
+
+    QString txMessage = "Transmit Data : " + txData.toHex();
+    ui->tcpMessage->append(txMessage);
+    ui->btnDockingStation->setEnabled(false);
 }

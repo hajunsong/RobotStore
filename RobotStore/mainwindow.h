@@ -80,8 +80,8 @@ public slots:
     void orderBtnPressedSlot();
     void orderBtnReleasedSlot();
     void delayTimeout();
-
     void singleCbSlot();
+    void tcpTimeout();
 
 private:
     Ui::MainWindow *ui;
@@ -118,6 +118,9 @@ private:
 
     QString fileName;
     Logger *logger;
+    bool startable_flag;
+    QTimer *tcpTimer;
+    QByteArray tcpData;
 };
 
 #endif // MAINWINDOW_H
