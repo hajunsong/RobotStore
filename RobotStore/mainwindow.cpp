@@ -298,7 +298,7 @@ void MainWindow::readMessageFromPLC() {
         if (ch[0] == 0x03 && ch[1] == 0x06) {
 //            if ((ch[2] & 0b01000000) == 0b01000000)
                 //if (ch[2] == 0x60)
-            if (ch[2] == 0x40)
+            if (ch[2] == 0x00 || ch[2] == 0x60 || ch[2] == 0x40)
             {
                 qDebug() << "Manipulator ready!!";
                 ui->tcpMessage->append("Manipulator ready!!");

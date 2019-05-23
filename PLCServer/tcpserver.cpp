@@ -52,7 +52,7 @@ void TcpServer::incomingConnection(qintptr socketDescriptor) {
 	QByteArray txData;
 	txData.append(QByteArray::fromRawData("\x03\x06", 2));
 //	txData.append(65);
-    txData.append(QByteArray::fromRawData("\x40\x00", 2));
+    txData.append(QByteArray::fromRawData("\x60\x00", 2));
 	txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00", 8));
 	txData.append(QByteArray::fromRawData("\x0D\x05", 2));
 	socket->write(txData);
