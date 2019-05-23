@@ -1,5 +1,6 @@
 **/[Rr]elease
 **/[Dd]ebug
 **/*.pro.user
+**/*.pro.*
 Deploy/execute/
 **/logging/
