@@ -3,4 +3,5 @@
 **/*.pro.user
 **/*.pro.*
 Deploy/execute/
+Deploy/*.zip
 **/logging/
