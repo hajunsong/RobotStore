@@ -114,8 +114,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     move_flag = false;
     start_flag = false;
     single_flag = false;
+    auto_flag = false;
 
     connect(ui->cbSingleTest, SIGNAL(clicked()), this, SLOT(singleCbSlot()));
+    connect(ui->cbAuto, SIGNAL(clicked()), this, SLOT(cbAutoSlot()));
 
     QDateTime *date = new QDateTime();
     _mkdir("../logging");
@@ -124,8 +126,16 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     logger->write("------- Application Startup --------");
 
     tcpTimer = new QTimer(this);
-    tcpTimer->setInterval(666);
+    tcpTimer->setInterval(1000);
     connect(tcpTimer, SIGNAL(timeout()), this, SLOT(tcpTimeout()));
+
+    noGuestTimer = new QTimer(this);
+    noGuestTimer->setInterval(60000);
+    connect(noGuestTimer, SIGNAL(timeout()), this, SLOT(noGuestTimeout()));
+
+    stopInputTimer = new QTimer(this);
+    stopInputTimer->setInterval(60000);
+    connect(stopInputTimer, SIGNAL(timeout()), this, SLOT(stopInputTimeout()));
 }
 
 MainWindow::~MainWindow()
@@ -282,9 +292,15 @@ void MainWindow::readMessageFromPLC() {
                     txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
                     txDataMR.append(QByteArray::fromRawData("\x00", 1));
                     txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
-                    MR->socket->write(txDataMR);
-                    qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
-                    logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
+                    if (connectStateMR){
+                        MR->socket->write(txDataMR);
+                        qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+                        logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
+                    }
+                    else{
+                        qDebug() << "Disconnected MR";
+                        logger->write("Disconnected MR");
+                    }
                 }
                 else{
                     timer->start();
@@ -314,6 +330,7 @@ void MainWindow::readMessageFromPLC() {
 void MainWindow::uiStartBtnSlot() {
     ui->centralWidget->hide();
     mainUI->setHidden(false);
+    selectPageInit();
 }
 
 void MainWindow::timeout() {
@@ -392,6 +409,7 @@ void MainWindow::orderBtnPressedSlot() {
 }
 
 void MainWindow::orderBtnReleasedSlot() {
+    stopInputTimer->stop();
     if (colorIndex >= 0 && patternIndex >= 0) {
         clickLabelDrawImage(orderBtn, imageHeader + orderIcon[1], 0.2);
 
@@ -406,16 +424,19 @@ void MainWindow::orderBtnReleasedSlot() {
         txData.append(QByteArray::fromRawData("\x00\x00\x00\x00\x00\x00\x00\x00", 8));
         txData.append(QByteArray::fromRawData("\x0D\x05", 2));
         PLC->socket->write(txData);
+        PLC->socket->flush();
         qDebug() << "Transmit Data(To PLC) : " + txData.toHex();
         logger->write("Transmit Data(To PLC) : " + txData.toHex());
 
         if (!single_flag) {
             QByteArray txDataMR;
             txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
-            txDataMR.append(QByteArray::fromRawData("\x02", 1));
+            txDataMR.append(QByteArray::fromRawData("\x03", 1));
             txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
 
             MR->socket->write(txDataMR);
+//            MR->socket->flush();
+//            QThread::msleep(100);
             qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
             logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
         }
@@ -474,6 +495,13 @@ void MainWindow::connectedClient() {
     logger->write("Mobile Robot Connected");
     checkAllConnectState();
     tcpTimer->start();
+    if (mainUI->currentIndex() != startPage){
+        mainUI->slideInIdx(startPage, mainUI->TOP2BOTTOM);
+    }
+    robotPositionState = false;
+    clerkLabel->hide();
+    selectPageInit();
+    clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
 }
 
 void MainWindow::readMessageFromMR() {
@@ -496,6 +524,7 @@ void MainWindow::readMessageFromMR() {
 
             clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
             mainUI->slideInIdx(selectPage, mainUI->BOTTOM2TOP);
+            stopInputTimer->start();
 
             QByteArray txData;
             txData.append(QByteArray::fromRawData("\x02\x05", 2));
@@ -503,8 +532,18 @@ void MainWindow::readMessageFromMR() {
             txData.append(QByteArray::fromRawData("\x0D\x05", 2));
 
             PLC->socket->write(txData);
+            PLC->socket->flush();
             qDebug() << "Transmit Data(To PLC) : " + txData.toHex();
             logger->write("Transmit Data(To PLC) : " + txData.toHex());
+
+            if (auto_flag){
+                QThread::sleep(1);
+                colorIndex = 2;
+                patternIndex = 2;
+
+                QThread::sleep(1);
+                orderBtnReleasedSlot();
+            }
         }
         else if(ch[2] == 0x05){
             qDebug() << "Mobile robot arrives in front of docking station";
@@ -513,6 +552,13 @@ void MainWindow::readMessageFromMR() {
             mainUI->slideInIdx(startPage, mainUI->TOP2BOTTOM);
             selectPageInit();
             if (!single_flag) robotPositionState = false;
+
+            if (auto_flag){
+                QThread::sleep(20);
+                startBtnPressedSlot();
+                QThread::sleep(1);
+                startBtnReleasedSlot();
+            }
         }
     }
 }
@@ -534,6 +580,7 @@ void MainWindow::delayTimeout() {
     txData.append(QByteArray::fromRawData("\x0D\x05", 2));
 
     PLC->socket->write(txData);
+    PLC->socket->flush();
     qDebug() << "Transmit Data(To PLC) : " + txData.toHex();
     logger->write("Transmit Data(To PLC) : " + txData.toHex());
 
@@ -551,13 +598,45 @@ void MainWindow::singleCbSlot() {
     }
 }
 
+void MainWindow::cbAutoSlot(){
+    auto_flag = ui->cbAuto->isChecked();
+    logger->write("UI auto test " + QString::number(auto_flag));
+}
+
 void MainWindow::tcpTimeout(){
     tcpData.clear();
     tcpData.append(QByteArray::fromRawData("\x02\x05", 2));
-    tcpData.append(QByteArray::fromRawData("\x05", 1));
+    tcpData.append(QByteArray::fromRawData("\x06", 1));
     tcpData.append(QByteArray::fromRawData("\x0D\x05", 2));
     MR->socket->write(tcpData);
 
     qDebug() << "Transmit Data(To MR) : " + tcpData.toHex();
     logger->write("Transmit Data(To MR) : " + tcpData.toHex());
+//    QThread::msleep(100);
+}
+
+void MainWindow::noGuestTimeout(){
+
+}
+
+void MainWindow::stopInputTimeout(){
+    qDebug() << "Leaved guest";
+    logger->write("Leaved guest");
+    QByteArray txDataMR;
+    txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
+    txDataMR.append(QByteArray::fromRawData("\x07", 1));
+    txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
+
+    MR->socket->write(txDataMR);
+    qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+    logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
+    stopInputTimer->stop();
+
+    if (mainUI->currentIndex() != startPage){
+        mainUI->slideInIdx(startPage, mainUI->TOP2BOTTOM);
+    }
+    robotPositionState = false;
+    clerkLabel->hide();
+    selectPageInit();
+    clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
 }

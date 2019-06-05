@@ -111,6 +111,19 @@
      <string>SingleTest</string>
     </property>
    </widget>
+   <widget class="QCheckBox" name="cbAuto">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>60</y>
+      <width>83</width>
+      <height>18</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Auto</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

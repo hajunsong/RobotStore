@@ -8,7 +8,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     this->setFixedSize(500, 400);
     this->setWindowTitle("Mobile Robot");
 
-    ui->ipAddress->setText("169.254.125.4");
+    ui->ipAddress->setText("127.0.0.1");
 
     connectState = false;
     client = new TcpClient(this);
@@ -60,21 +60,42 @@ void MainWindow::readMessage() {
     rxMessage = "Receive Data : " + rxData.toHex();
     ui->tcpMessage->append(rxMessage);
 
-    char *ch = new char[rxData.length()];
-    for (int j = 0; j < rxData.length(); j++) {
-        ch[j] = rxData.at(j);
-    }
-    if (ch[0] == 0x02 && ch[1] == 0x05) {
-        if (ch[2] == 0x01) {
-            guestState = true;
-            ui->guestCbox->setChecked(true);
-            ui->positionBtn->setEnabled(true);
-        }
-        else if (ch[2] == 0) {
-            guestState = false;
-            ui->guestCbox->setChecked(false);
-            ui->positionBtn->setDisabled(true);
-            ui->btnDockingStation->setEnabled(true);
+    char rxHead = 0x02, rxHeadSub = 0x05;
+    QList<QByteArray> rxDataList = rxData.split(rxHead);
+    int len = rxDataList.length();
+    for(int i = 0; i < len; i++){
+        QList<QByteArray> rxDataListSub = rxDataList[i].split(rxHeadSub);
+        int len_sub = rxDataListSub.length();
+        if (len_sub > 1){
+            for(int j = 0; j < len_sub; j++){
+                if(rxDataListSub[j].length() > 0){
+                    int data = rxDataListSub[j].at(0);
+                    qDebug() << "data : " + QString::number(data);
+                    switch(data){
+                    case 0:
+                        ui->positionBtn->setDisabled(true);
+                        ui->btnDockingStation->setEnabled(true);
+                        break;
+                    case 1:
+                        guestState = true;
+                        ui->guestCbox->setChecked(true);
+                        ui->positionBtn->setEnabled(true);
+                        ui->btnDockingStation->setEnabled(false);
+                        break;
+                    case 3:
+                        guestState = false;
+                        ui->guestCbox->setChecked(false);
+                        break;
+                    case 7:
+                        guestState = false;
+                        ui->guestCbox->setChecked(false);
+                        ui->btnDockingStation->setEnabled(true);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
         }
     }
 }

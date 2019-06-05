@@ -82,6 +82,9 @@ public slots:
     void delayTimeout();
     void singleCbSlot();
     void tcpTimeout();
+    void cbAutoSlot();
+    void stopInputTimeout();
+    void noGuestTimeout();
 
 private:
     Ui::MainWindow *ui;
@@ -110,6 +113,7 @@ private:
     bool move_flag;
     bool start_flag;
     bool single_flag;
+    bool auto_flag;
 
     void selectPageInit();
     void checkAllConnectState();
@@ -121,6 +125,7 @@ private:
     bool startable_flag;
     QTimer *tcpTimer;
     QByteArray tcpData;
+    QTimer *stopInputTimer, *noGuestTimer;
 };
 
 #endif // MAINWINDOW_H
