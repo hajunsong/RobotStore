@@ -115,6 +115,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     start_flag = false;
     single_flag = false;
     auto_flag = false;
+    full_auto_flag = false;
 
     connect(ui->cbSingleTest, SIGNAL(clicked()), this, SLOT(singleCbSlot()));
     connect(ui->cbAuto, SIGNAL(clicked()), this, SLOT(cbAutoSlot()));
@@ -350,20 +351,30 @@ void MainWindow::startBtnPressedSlot() {
 void MainWindow::startBtnReleasedSlot() {
     clerkLabel->show();
 
-    if (!single_flag) {
-        QByteArray txDataMR;
-        txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
-        txDataMR.append(QByteArray::fromRawData("\x01", 1));
-        txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
-        MR->socket->write(txDataMR);
-        qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
-        logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
-    }
-    else {
+    if (full_auto_flag){
+        connect(mainUI, &SlidingStackedWidget::animationFinished, this, &MainWindow::pageChangedSlot);
+
         clerkLabel->hide();
 
         clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
         mainUI->slideInIdx(selectPage, mainUI->BOTTOM2TOP);
+    }
+    else{
+        if (!single_flag) {
+            QByteArray txDataMR;
+            txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
+            txDataMR.append(QByteArray::fromRawData("\x01", 1));
+            txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
+            MR->socket->write(txDataMR);
+            qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+            logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
+        }
+        else {
+            clerkLabel->hide();
+
+            clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
+            mainUI->slideInIdx(selectPage, mainUI->BOTTOM2TOP);
+        }
     }
 }
 
@@ -440,7 +451,6 @@ void MainWindow::orderBtnReleasedSlot() {
             qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
             logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
         }
-
         delayTimer->start();
     }
 }
@@ -592,6 +602,7 @@ void MainWindow::delayTimeout() {
 void MainWindow::singleCbSlot() {
     single_flag = ui->cbSingleTest->isChecked();
     logger->write("PLC single test " + QString::number(single_flag));
+    if (single_flag && auto_flag) full_auto_flag = true;
     if (connectStatePLC){
         PLCReady = true;
         checkAllConnectState();
@@ -601,6 +612,7 @@ void MainWindow::singleCbSlot() {
 void MainWindow::cbAutoSlot(){
     auto_flag = ui->cbAuto->isChecked();
     logger->write("UI auto test " + QString::number(auto_flag));
+    if (single_flag && auto_flag) full_auto_flag = true;
 }
 
 void MainWindow::tcpTimeout(){
@@ -639,4 +651,28 @@ void MainWindow::stopInputTimeout(){
     clerkLabel->hide();
     selectPageInit();
     clickLabelDrawImage(startBtn, imageHeader + startIcon[0], 0.3);
+}
+
+void MainWindow::pageChangedSlot(){
+//    qDebug() << mainUI->currentIndex();
+    int page = mainUI->currentIndex();
+    switch(page){
+    case startPage:
+        QThread::sleep(1);
+        mainUI->slideInIdx(selectPage, mainUI->BOTTOM2TOP);
+        break;
+    case selectPage:
+        colorIndex = 2;
+        patternIndex = 2;
+
+        QThread::sleep(1);
+        orderBtnReleasedSlot();
+        break;
+    case itemPage:
+        break;
+    case thankPage:
+        break;
+    default:
+        break;
+    }
 }

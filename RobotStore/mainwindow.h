@@ -86,6 +86,8 @@ public slots:
     void stopInputTimeout();
     void noGuestTimeout();
 
+    void pageChangedSlot();
+
 private:
     Ui::MainWindow *ui;
     TcpServer *MR;
@@ -114,6 +116,7 @@ private:
     bool start_flag;
     bool single_flag;
     bool auto_flag;
+    bool full_auto_flag;
 
     void selectPageInit();
     void checkAllConnectState();
