@@ -446,8 +446,6 @@ void MainWindow::orderBtnReleasedSlot() {
             txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
 
             MR->socket->write(txDataMR);
-//            MR->socket->flush();
-//            QThread::msleep(100);
             qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
             logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
         }
@@ -484,6 +482,8 @@ void MainWindow::clickLabelDrawImage(QClickLabel *clickLabel, QString imagePath,
     }
     clickLabel->setPixmap(*buffer);
     clickLabel->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    delete image;
+    delete buffer;
 }
 
 void MainWindow::labelDrawImage(QLabel *label, QString imagePath, double scale) {
@@ -495,6 +495,8 @@ void MainWindow::labelDrawImage(QLabel *label, QString imagePath, double scale) 
     }
     label->setPixmap(*buffer);
     label->setAlignment(Qt::AlignmentFlag::AlignCenter);
+    delete image;
+    delete buffer;
 }
 
 void MainWindow::connectedClient() {
@@ -624,11 +626,20 @@ void MainWindow::tcpTimeout(){
 
     qDebug() << "Transmit Data(To MR) : " + tcpData.toHex();
     logger->write("Transmit Data(To MR) : " + tcpData.toHex());
-//    QThread::msleep(100);
 }
 
 void MainWindow::noGuestTimeout(){
+    qDebug() << "No guest";
+    logger->write("No guest");
+    QByteArray txDataMR;
+    txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
+    txDataMR.append(QByteArray::fromRawData("\x08", 1));
+    txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
 
+    MR->socket->write(txDataMR);
+    qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+    logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
+    stopInputTimer->stop();
 }
 
 void MainWindow::stopInputTimeout(){
