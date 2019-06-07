@@ -131,7 +131,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     connect(tcpTimer, SIGNAL(timeout()), this, SLOT(tcpTimeout()));
 
     noGuestTimer = new QTimer(this);
-    noGuestTimer->setInterval(60000);
+    noGuestTimer->setInterval(300000);
     connect(noGuestTimer, SIGNAL(timeout()), this, SLOT(noGuestTimeout()));
 
     stopInputTimer = new QTimer(this);
@@ -332,6 +332,7 @@ void MainWindow::uiStartBtnSlot() {
     ui->centralWidget->hide();
     mainUI->setHidden(false);
     selectPageInit();
+    noGuestTimer->start();
 }
 
 void MainWindow::timeout() {
@@ -346,6 +347,7 @@ void MainWindow::timeout() {
 
 void MainWindow::startBtnPressedSlot() {
     clickLabelDrawImage(startBtn, imageHeader + startIcon[1], 0.3);
+    noGuestTimer->stop();
 }
 
 void MainWindow::startBtnReleasedSlot() {
@@ -571,6 +573,8 @@ void MainWindow::readMessageFromMR() {
                 QThread::sleep(1);
                 startBtnReleasedSlot();
             }
+
+            noGuestTimer->start();
         }
     }
 }
@@ -639,7 +643,7 @@ void MainWindow::noGuestTimeout(){
     MR->socket->write(txDataMR);
     qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
     logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
-    stopInputTimer->stop();
+    noGuestTimer->stop();
 }
 
 void MainWindow::stopInputTimeout(){
