@@ -133,6 +133,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     noGuestTimer = new QTimer(this);
     noGuestTimer->setInterval(300000);
     connect(noGuestTimer, SIGNAL(timeout()), this, SLOT(noGuestTimeout()));
+    no_guest_flag = false;
 
     stopInputTimer = new QTimer(this);
     stopInputTimer->setInterval(60000);
@@ -575,6 +576,9 @@ void MainWindow::readMessageFromMR() {
             }
 
             noGuestTimer->start();
+
+            no_guest_flag = false;
+            startBtn->setEnabled(true);
         }
     }
 }
@@ -644,6 +648,8 @@ void MainWindow::noGuestTimeout(){
     qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
     logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
     noGuestTimer->stop();
+    no_guest_flag = true;
+    startBtn->setEnabled(false);
 }
 
 void MainWindow::stopInputTimeout(){

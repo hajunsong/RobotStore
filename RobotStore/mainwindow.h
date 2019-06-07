@@ -117,6 +117,7 @@ private:
     bool single_flag;
     bool auto_flag;
     bool full_auto_flag;
+    bool no_guest_flag;
 
     void selectPageInit();
     void checkAllConnectState();
