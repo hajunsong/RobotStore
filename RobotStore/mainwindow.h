@@ -57,6 +57,8 @@ public:
     void ReadSettings();    // Load up qt program settings at startup
     void WriteSettings();   // Save qt program settings when closing
     void closeEvent(QCloseEvent *event);    // Overload function
+    void mousePressEvent(QMouseEvent *ev);
+    void mouseReleaseEvent(QMouseEvent *ev);
 public slots:
     void listenBtnSlot();
     void readMessageFromMR();
@@ -87,6 +89,8 @@ public slots:
     void noGuestTimeout();
 
     void pageChangedSlot();
+
+    void closeBtnSlot();
 
 private:
     Ui::MainWindow *ui;
@@ -129,6 +133,8 @@ private:
     QTimer *tcpTimer;
     QByteArray tcpData;
     QTimer *stopInputTimer, *noGuestTimer;
+
+    int pointPress[2], pointRelease[2];
 };
 
 #endif // MAINWINDOW_H

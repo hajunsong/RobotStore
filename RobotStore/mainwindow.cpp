@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
 
     // 1 Page
     startBtn = new QClickLabel(&pageWidget[startPage]);
-    startBtn->setGeometry(pageWidget[startPage].rect());
+    startBtn->setGeometry(pageWidget[startPage].width()/3, pageWidget[startPage].height()/4, pageWidget[startPage].width()/3, pageWidget[startPage].height()/2);
     startBtn->setObjectName(QStringLiteral("startBtn"));
     connect(startBtn, SIGNAL(mousePressed()), this, SLOT(startBtnPressedSlot()));
     connect(startBtn, SIGNAL(mouseReleased()), this, SLOT(startBtnReleasedSlot()));
@@ -137,6 +137,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     stopInputTimer = new QTimer(this);
     stopInputTimer->setInterval(60000);
     connect(stopInputTimer, SIGNAL(timeout()), this, SLOT(stopInputTimeout()));
+
+    connect(ui->btnClose, SIGNAL(clicked()), this, SLOT(closeBtnSlot()));
+    connect(ui->btnStart, SIGNAL(clicked()), this, SLOT(uiStartBtnSlot()));
 }
 
 MainWindow::~MainWindow()
@@ -631,14 +634,14 @@ void MainWindow::tcpTimeout(){
 void MainWindow::noGuestTimeout(){
     qDebug() << "No guest";
     logger->write("No guest");
-    QByteArray txDataMR;
-    txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
-    txDataMR.append(QByteArray::fromRawData("\x08", 1));
-    txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
+//    QByteArray txDataMR;
+//    txDataMR.append(QByteArray::fromRawData("\x02\x05", 2));
+//    txDataMR.append(QByteArray::fromRawData("\x08", 1));
+//    txDataMR.append(QByteArray::fromRawData("\x0D\x05", 2));
 
-    MR->socket->write(txDataMR);
-    qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
-    logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
+//    MR->socket->write(txDataMR);
+//    qDebug() << "Transmit Data(To MR) : " + txDataMR.toHex();
+//    logger->write("Transmit Data(To MR) : " + txDataMR.toHex());
     stopInputTimer->stop();
 }
 
@@ -685,5 +688,38 @@ void MainWindow::pageChangedSlot(){
         break;
     default:
         break;
+    }
+}
+
+void MainWindow::closeBtnSlot()
+{
+    this->close();
+}
+
+void MainWindow::mousePressEvent(QMouseEvent *ev)
+{
+    pointPress[0] = ev->x();
+    pointPress[1] = ev->y();
+    qDebug() << "Mouse press event";
+    qDebug() << ev->x();
+    qDebug() << ev->y();
+}
+
+void MainWindow::mouseReleaseEvent(QMouseEvent *ev)
+{
+    qDebug() << "Mouse release event";
+//    qDebug() << ev->x();
+//    qDebug() << ev->y();
+    pointRelease[0] = ev->x();
+    pointRelease[1] = ev->y();
+
+    int move_x = abs(pointPress[0] - pointRelease[0]);
+    int move_y = abs(pointPress[1] - pointRelease[1]);
+
+    if (move_x > 1500 && move_y > 800){
+        ui->centralWidget->setHidden(false);
+        mainUI->hide();
+        selectPageInit();
+        mainUI->slideInIdx(startPage, mainUI->BOTTOM2TOP);
     }
 }
